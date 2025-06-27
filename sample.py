@@ -118,9 +118,15 @@ def print_authenticated_user():
     print(f"\n📧 Gmail account in use: {profile.get('emailAddress')}")
 
 def get_authenticated_email():
-    service = get_gmail_service()
-    profile = service.users().getProfile(userId='me').execute()
-    return profile.get('emailAddress')
+    try:
+        service = get_gmail_service()
+        profile = service.users().getProfile(userId='me').execute()
+        return profile.get('emailAddress')
+    except Exception as e:
+        import traceback
+        st.error("❌ Gmail authentication failed.")
+        st.exception(e)
+        raise
 
 def main():
     print_authenticated_user()
@@ -135,4 +141,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
