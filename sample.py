@@ -42,7 +42,7 @@ def get_gmail_service():
                 st.markdown(f"[Click here to authorize Gmail access]({auth_url})")
 
                 # After user logs in, Google redirects to this page with `?code=...`
-                query_params = st.experimental_get_query_params()
+                query_params = st.query_params
                 if "code" in query_params:
                     code = query_params["code"][0]
                     flow.fetch_token(code=code)
