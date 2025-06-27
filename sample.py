@@ -1,11 +1,12 @@
 import base64
 import os
 import re
+import streamlit as st
 from datetime import datetime
 from bs4 import BeautifulSoup
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from googleapiclient.discovery import build
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -14,14 +15,32 @@ def get_gmail_service():
     creds = None
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+            if st.secrets.get("streamlit_app") == "1":
+                flow = Flow.from_client_config(
+                    {
+                        "web": {
+                            "client_id": st.secrets["google_auth"]["client_id"],
+                            "client_secret": st.secrets["google_auth"]["client_secret"],
+                            "redirect_uris": st.secrets["google_auth"]["redirect_uris"],
+                            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                            "token_uri": "https://oauth2.googleapis.com/token"
+                        }
+                    },
+                    scopes=SCOPES
+                )
+                creds = flow.run_console()
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file("client_secret_desktop.json", SCOPES)
+                creds = flow.run_local_server(port=0)
+
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
+
     return build('gmail', 'v1', credentials=creds)
 
 def extract_amount_and_due_date(text):
@@ -84,7 +103,6 @@ def get_credit_card_bills():
 
         amount, due_date = extract_amount_and_due_date(text)
         if amount and due_date:
-            # Keep only the latest due date per card
             if (card_name not in results) or (due_date > datetime.strptime(results[card_name]['due_date'], '%Y-%m-%d')):
                 results[card_name] = {
                     "name": card_name,
@@ -117,3 +135,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
