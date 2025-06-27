@@ -8,6 +8,8 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from googleapiclient.discovery import build
+from urllib.parse import urlparse, parse_qs
+import streamlit as st
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
@@ -31,15 +33,21 @@ def get_gmail_service():
                             "token_uri": "https://oauth2.googleapis.com/token"
                         }
                     },
-                    scopes=SCOPES
+                    scopes=SCOPES,
+                    redirect_uri=st.secrets["google_auth"]["redirect_uris"][0]
                 )
-                creds = flow.run_console()
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file("client_secret_desktop.json", SCOPES)
-                creds = flow.run_local_server(port=0)
 
-            with open('token.json', 'w') as token:
-                token.write(creds.to_json())
+                auth_url, _ = flow.authorization_url(prompt='consent')
+
+                st.markdown(f"[Click here to authorize Gmail access]({auth_url})")
+
+                # After user logs in, Google redirects to this page with `?code=...`
+                query_params = st.experimental_get_query_params()
+                if "code" in query_params:
+                    code = query_params["code"][0]
+                    flow.fetch_token(code=code)
+                    creds = flow.credentials
+
 
     return build('gmail', 'v1', credentials=creds)
 
