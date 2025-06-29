@@ -9,7 +9,6 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from googleapiclient.discovery import build
 from urllib.parse import urlparse, parse_qs
-import streamlit as st
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
@@ -38,16 +37,16 @@ def get_gmail_service():
                 )
 
                 auth_url, _ = flow.authorization_url(prompt='consent')
-
                 st.markdown(f"[Click here to authorize Gmail access]({auth_url})")
 
-                # After user logs in, Google redirects to this page with `?code=...`
                 query_params = st.query_params
                 if "code" in query_params:
                     code = query_params["code"][0]
                     flow.fetch_token(code=code)
                     creds = flow.credentials
 
+    if creds:
+        creds = creds.with_quota_project(None)  # 👈 key patch to avoid GCP metadata lookup
 
     return build('gmail', 'v1', credentials=creds)
 
