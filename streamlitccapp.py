@@ -8,27 +8,27 @@ st.set_page_config(page_title="CC Tracker", layout="wide")
 st.title("📊 Credit Card + UPI Tracker")
 
 # Sidebar Inputs
-st.sidebar.header("\ud83d\udd27 Configure")
+st.sidebar.header("🔧 Configure")
 salary_date = st.sidebar.date_input("Salary Credited On", datetime.date.today())
 account_balance = st.sidebar.number_input("Available Bank Balance (₹)", min_value=0.0, format="%.2f")
 
 # Gmail Auth with Visual Tracker
-st.sidebar.subheader("\ud83d\udd10 Gmail Authentication Status")
+st.sidebar.subheader("🔐 Gmail Authentication Status")
 with st.sidebar.status("Checking Gmail authentication...", expanded=True) as status:
     try:
         email = get_authenticated_email()
-        st.sidebar.success("\u2705 Gmail authenticated")
-        st.sidebar.markdown(f"\ud83d\udce7 Logged in as: `{email}`")
+        st.sidebar.success("✅ Gmail authenticated")
+        st.sidebar.markdown(f"📧 Logged in as: `{email}`")
         status.update(label="Gmail authentication complete", state="complete")
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
-        st.sidebar.error("\u274c Gmail authentication failed.")
+        st.sidebar.error("❌ Gmail authentication failed.")
         st.sidebar.markdown("**Error details:**")
         st.sidebar.code(tb, language="python")
 
         if "metadata.google.internal" in tb:
-            st.sidebar.warning("\u26a0\ufe0f GCP metadata call failed. This often happens on Streamlit Cloud.")
+            st.sidebar.warning("⚠️ GCP metadata call failed. This often happens on Streamlit Cloud.")
 
         status.update(label="Gmail authentication failed", state="error")
         st.stop()
@@ -65,14 +65,14 @@ jar_color, alert_type, jar_fill_level = get_jar_status(net_available, total_due)
 fill_pct = 150 - (jar_fill_level / 100) * 150
 
 # Dashboard Metrics
-st.subheader("\ud83d\udccc Current Snapshot")
+st.subheader("📌 Current Snapshot")
 col1, col2, col3 = st.columns(3)
 col1.metric("Available Balance", f"₹{account_balance:,.2f}")
 col2.metric("Total Credit Card Due", f"₹{total_due:,.2f}")
 col3.metric("UPI Expenses", f"₹{total_upi:,.2f}")
 
 # Net Savings
-st.subheader("\ud83d\udcbe Amount Left to Pay Credit Card Dues")
+st.subheader("💾 Amount Left to Pay Credit Card Dues")
 if alert_type == 'success':
     st.success(f"You have ₹{net_available:,.2f} left after UPI spending. This is more than enough.")
 elif alert_type == 'warning':
@@ -80,7 +80,7 @@ elif alert_type == 'warning':
 else:
     st.error(f"You have only ₹{net_available:,.2f} left after UPI spending. Urgent action needed!")
 
-st.subheader("\ud83e\udee9 Credit Card Jar Status")
+st.subheader("🫙 Credit Card Jar Status")
 
 jar_html = f"""
 <div style="position: relative; width: 200px; height: 300px; margin: auto;">
@@ -112,7 +112,7 @@ jar_html = f"""
 components.html(jar_html, height=350)
 
 # Credit Card Details
-st.subheader("\ud83d\udcb3 Credit Card Details")
+st.subheader("💳 Credit Card Details")
 for card in credit_cards:
     st.markdown(f"**{card['name']}**")
     st.write(f"- Due Amount: ₹{card['due_amount']:,.2f}")
@@ -120,12 +120,12 @@ for card in credit_cards:
     st.markdown("---")
 
 # UPI Transaction Breakdown
-st.subheader("\ud83d\udcb8 UPI Transaction History")
+st.subheader("💸 UPI Transaction History")
 if upi_data:
     for date in sorted(upi_data.keys()):
-        st.write(f"\ud83d\uddd5\ufe0f {date}: ₹{upi_data[date]:,.2f}")
+        st.write(f"📅 {date}: ₹{upi_data[date]:,.2f}")
 else:
     st.info("No UPI transactions found for this month.")
 
 # Tip
-st.info("\ud83d\udca1 Tip: Treat your credit card like a savings account. Spend mindfully, clear dues in full, and earn rewards!")
+st.info("💡 Tip: Treat your credit card like a savings account. Spend mindfully, clear dues in full, and earn rewards!")
