@@ -4,51 +4,45 @@ import re
 import streamlit as st
 from datetime import datetime
 from bs4 import BeautifulSoup
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow, Flow
+from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
+from google.auth.transport.requests import Request
 from urllib.parse import urlparse, parse_qs
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 def get_gmail_service():
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            if st.secrets.get("streamlit_app") == "1":
-                flow = Flow.from_client_config(
-                    {
-                        "web": {
-                            "client_id": st.secrets["google_auth"]["client_id"],
-                            "client_secret": st.secrets["google_auth"]["client_secret"],
-                            "redirect_uris": st.secrets["google_auth"]["redirect_uris"],
-                            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                            "token_uri": "https://oauth2.googleapis.com/token"
-                        }
-                    },
-                    scopes=SCOPES,
-                    redirect_uri=st.secrets["google_auth"]["redirect_uris"][0]
-                )
+    if st.secrets.get("streamlit_app") == "1":
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": st.secrets["google_auth"]["client_id"],
+                    "client_secret": st.secrets["google_auth"]["client_secret"],
+                    "redirect_uris": st.secrets["google_auth"]["redirect_uris"],
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token"
+                }
+            },
+            scopes=SCOPES,
+            redirect_uri=st.secrets["google_auth"]["redirect_uris"][0]
+        )
 
-                auth_url, _ = flow.authorization_url(prompt='consent')
-                st.markdown(f"[Click here to authorize Gmail access]({auth_url})")
+        auth_url, _ = flow.authorization_url(prompt='consent')
+        st.markdown(f"[Click here to authorize Gmail access]({auth_url})")
 
-                query_params = st.query_params
-                if "code" in query_params:
-                    code = query_params["code"][0]
-                    flow.fetch_token(code=code)
-                    creds = flow.credentials
+        query_params = st.query_params
+        if "code" in query_params:
+            code = query_params["code"][0]
+            flow.fetch_token(code=code)
+            creds = flow.credentials
 
     if creds:
-        creds = creds.with_quota_project(None)  # 👈 key patch to avoid GCP metadata lookup
-
-    return build('gmail', 'v1', credentials=creds)
+        creds = creds.with_quota_project(None)
+        return build('gmail', 'v1', credentials=creds)
+    else:
+        st.stop()
 
 def extract_amount_and_due_date(text):
     amount_match = re.search(
