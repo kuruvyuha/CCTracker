@@ -14,29 +14,38 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 def get_gmail_service():
     creds = None
 
-    if st.secrets.get("streamlit_app") == "1":
-        flow = Flow.from_client_config(
-            {
-                "web": {
-                    "client_id": st.secrets["google_auth"]["client_id"],
-                    "client_secret": st.secrets["google_auth"]["client_secret"],
-                    "redirect_uris": st.secrets["google_auth"]["redirect_uris"],
-                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                    "token_uri": "https://oauth2.googleapis.com/token"
-                }
-            },
-            scopes=SCOPES,
-            redirect_uri=st.secrets["google_auth"]["redirect_uris"][0]
-        )
+    # ✅ Load from session_state if available
+    if 'creds' in st.session_state:
+        creds = st.session_state['creds']
 
-        auth_url, _ = flow.authorization_url(prompt='consent')
-        st.markdown(f"[Click here to authorize Gmail access]({auth_url})")
+    if not creds:
+        if st.secrets.get("streamlit_app") == "1":
+            flow = Flow.from_client_config(
+                {
+                    "web": {
+                        "client_id": st.secrets["google_auth"]["client_id"],
+                        "client_secret": st.secrets["google_auth"]["client_secret"],
+                        "redirect_uris": st.secrets["google_auth"]["redirect_uris"],
+                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                        "token_uri": "https://oauth2.googleapis.com/token"
+                    }
+                },
+                scopes=SCOPES,
+                redirect_uri=st.secrets["google_auth"]["redirect_uris"][0]
+            )
 
-        query_params = st.query_params
-        if "code" in query_params:
+            auth_url, _ = flow.authorization_url(prompt='consent')
+            st.markdown(f"[👉 Click here to authorize Gmail access]({auth_url})")
+
+            query_params = st.query_params
+            if "code" not in query_params:
+                st.info("🔄 Waiting for you to complete Gmail authentication...")
+                st.stop()
+
             code = query_params["code"][0]
             flow.fetch_token(code=code)
             creds = flow.credentials
+            st.session_state['creds'] = creds  # ✅ Cache creds for session
 
     if creds:
         creds = creds.with_quota_project(None)
