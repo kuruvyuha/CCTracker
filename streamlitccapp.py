@@ -5,7 +5,7 @@ from sample import get_credit_card_bills, get_authenticated_email
 from track_upi_excc import extract_upi_debits
 
 st.set_page_config(page_title="CC Tracker", layout="wide")
-st.title("\ud83d\udcca Credit Card + UPI Tracker")
+st.title("📊 Credit Card + UPI Tracker")
 
 # Sidebar Inputs
 st.sidebar.header("\ud83d\udd27 Configure")
